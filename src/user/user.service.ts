@@ -14,19 +14,22 @@ export class UserService {
     @InjectModel(User.name) private readonly userModel: Model <UserDocument>,
   ) {}
 
-  async register(createUserDto: CreateUserDto) : Promise<User> {
+  async register(username: string, password:string) : Promise<any> {
 
-    const hash = await bcrypt.hash(createUserDto.password, 10);
+    const hash = await bcrypt.hash(password, 10);
 
     const obj = {
-      username: createUserDto.username,
+      username: username,
       password: hash,
+      bio: '',
       _id: uuidv4(),
+      bio_color: "#000000",
+      text_color: "#000000",
+      username_color: "#000000",
+      bg_color: "#ffffff"
     };
 
-
-    const user = await this.userModel.create(obj)
-    return user
+    return obj
   }
 
   async findUser(username: string): Promise<User> {

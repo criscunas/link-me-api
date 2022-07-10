@@ -3,7 +3,6 @@ import {
     Controller,
     UseGuards,
     Get,
-    Param,
     Res,
     Post,
     HttpStatus,
@@ -20,7 +19,6 @@ import { LocalAuthGuard } from 'src/auth/local-auth.guard';
 import { AuthService } from 'src/auth/auth.services';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { InjectModel } from '@nestjs/mongoose';
-import { jwtConstants } from 'src/auth/constants';
 
 @Controller('user')
 export class UserController {
@@ -32,25 +30,30 @@ export class UserController {
 
     @Post('/create')
     async create(@Body() createUserDto: CreateUserDto, @Res() res: Response) {
-        const user = await this.userService.register(createUserDto);
+        
+        const user = await this.userService.register(createUserDto.username, createUserDto.password);
+        const jwts = process.env.JWTS
+        
+        this.userModel.create(user)
+          .then((data) => {
 
-        if (!user) {
-            res.send('error');
-        }
-
-        const token = jwt.sign(
+          const token = jwt.sign(
             {
-                id: user._id,
+                id: data._id,
             },
-            jwtConstants.secret,
+              jwts,
             {
                 expiresIn: '24hr',
             },
         );
+          res.json({
+            auth: token
+          })
+        }).catch((error) => {
+          console.log(error)
+        })
 
-        res.json({
-            auth: token,
-        });
+
     }
 
     @UseGuards(LocalAuthGuard)
@@ -64,21 +67,26 @@ export class UserController {
     async getProfile(@Request() req, @Res() res: Response) {
         const id = req.user.id;
 
-        let profile = await this.userService.findByUserId(id);
+        this.userModel.findById(id).then((user) => {
+          res.json({
+            user : {
+              username: user.username,
+              bio: user.bio, 
+              links : user.links,
+              styles: {
+                bg_color: user.bg_color,
+                bio_color: user.bio_color,
+                text_color: user.text_color,
+                username_color: user.username_color
+              }
+            }
+          })
+          console.log(user)
+        }).catch((error) =>{ 
+          console.log(error)
+        })
+        
 
-        res.json({
-            user: {
-                username: profile.username,
-                bio: profile.bio,
-                links: profile.links,
-                styles: {
-                    bg_color: profile.bg_color,
-                    username_color: profile.username_color,
-                    text_color: profile.text_color,
-                    bio_color: profile.bio_color,
-                },
-            },
-        });
     }
 
     @UseGuards(JwtAuthGuard)
