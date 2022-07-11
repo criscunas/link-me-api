@@ -26,7 +26,7 @@ export class LinkController {
 
     @UseGuards(JwtAuthGuard)
     @Post('/')
-    async testRoute( @Body() createLinkDto: CreateLinkDto, @Res() res: Response, @Request() req) {
+    async createLink( @Body() createLinkDto: CreateLinkDto, @Res() res: Response, @Request() req) {
         const obj = await this.linkService.createLink(createLinkDto);
 
         this.userModel
